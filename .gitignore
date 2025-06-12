@@ -2,7 +2,7 @@
 hub/
 *.pth
 __pycache__/
-checkpoints/
+*checkpoints/
 datasets/
 large-datasets/
 wandb/
@@ -12,3 +12,5 @@ test.py
 cps/
 vivoice-datasets/
 output/
+dataset-1
+*.out

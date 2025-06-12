@@ -1,6 +1,7 @@
 import os
 import gc
-
+import torch
+import wandb
 from trainer import Trainer, TrainerArgs
 
 from TTS.config.shared_configs import BaseDatasetConfig
@@ -37,16 +38,28 @@ def create_xtts_trainer_parser():
                         help="Learning rate")
     parser.add_argument("--save_step", type=int, default=5000,
                         help="Save step")
+    parser.add_argument("--wandb_project", type=str, default=None,
+                        help="Weights & Biases project name")
 
     return parser
 
 
 
-def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_audio_length, max_text_length, lr, weight_decay, save_step):
+def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_audio_length, max_text_length, lr, weight_decay, save_step, wandb_project=None):
+    
+    # Initialize wandb if project specified
+    if wandb_project:
+        wandb.init(project=wandb_project, config={
+            "model": "XTTS",
+            "num_epochs": num_epochs, "batch_size": batch_size, "lr": lr,
+            "weight_decay": weight_decay, "max_audio_length": max_audio_length,
+            "max_text_length": max_text_length
+        }, settings=wandb.Settings(code_dir=None, _disable_stats=True, _disable_meta=True))
+
     #  Logging parameters
     RUN_NAME = "GPT_XTTS_FT"
     PROJECT_NAME = "XTTS_trainer"
-    DASHBOARD_LOGGER = "tensorboard"
+    DASHBOARD_LOGGER = "wandb" if wandb_project else "tensorboard"
     LOGGER_URI = None
 
     # Set here the path that the checkpoints will be saved. Default: ./run/training/
@@ -160,7 +173,7 @@ def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_au
     config.logger_uri = LOGGER_URI
     config.audio = audio_config
     config.batch_size = BATCH_SIZE
-    config.num_loader_workers = 8
+    config.num_loader_workers = 0
     config.eval_split_max_size = 256
     config.print_step = 50
     config.plot_step = 100
@@ -173,8 +186,14 @@ def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_au
     config.optimizer_wd_only_on_weights = OPTIMIZER_WD_ONLY_ON_WEIGHTS
     config.optimizer_params = {"betas": [0.9, 0.96], "eps": 1e-8, "weight_decay": weight_decay}
     config.lr = lr
-    config.lr_scheduler = "MultiStepLR"
-    config.lr_scheduler_params = {"milestones": [50000 * 18, 150000 * 18, 300000 * 18], "gamma": 0.5, "last_epoch": -1}
+    config.scheduler_after_epoch = False
+    config.lr_scheduler = "CosineAnnealingWarmRestarts"
+    config.lr_scheduler_params = {
+        "T_0": 88050,       # First restart
+        "T_mult": 1,        # Double the period after each restart
+        "eta_min": 1e-7,    # Minimum LR
+        "last_epoch": -1
+    }
     config.test_sentences = []
 
     # init the model from config
@@ -202,7 +221,12 @@ def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_au
         train_samples=train_samples,
         eval_samples=eval_samples,
     )
+    
     trainer.fit()
+
+    print("> Saving final model checkpoint...")
+    # The model.pth file is what's missing - this will create it
+    torch.save({"model": model.state_dict()}, os.path.join(trainer.output_path, "model.pth"))
 
     # get the longest text audio file to use as speaker reference
     samples_len = [len(item["text"].split(" ")) for item in train_samples]
@@ -214,6 +238,9 @@ def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_au
     # deallocate VRAM and RAM
     del model, trainer, train_samples, eval_samples
     gc.collect()
+
+    if wandb_project:
+        wandb.finish()
 
     return trainer_out_path
 
@@ -231,7 +258,8 @@ if __name__ == "__main__":
         lr=args.lr,
         max_text_length=args.max_text_length,
         max_audio_length=args.max_audio_length,
-        save_step=args.save_step
+        save_step=args.save_step,
+        wandb_project=args.wandb_project
     )
 
     print(f"Checkpoint saved in dir: {trainer_out_path}")
