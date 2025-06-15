@@ -1,7 +1,7 @@
 CUDA_VISIBLE_DEVICES=0 python train_gpt_xtts.py \
 --output_path checkpoints/ \
 --metadatas dataset-1/afrikaans/metadata_train.csv,dataset-1/afrikaans/metadata_eval.csv,af dataset-1/akan/metadata_train.csv,,ak dataset-1/akuapem_twi/metadata_train.csv,,tw dataset-1/amharic/metadata_train.csv,dataset-1/amharic/metadata_eval.csv,am dataset-1/arabic/metadata_train.csv,dataset-1/arabic/metadata_eval.csv,ar dataset-1/asante_twi/metadata_train.csv,dataset-1/asante_twi/metadata_eval.csv,tw dataset-1/french/metadata_train.csv,dataset-1/french/metadata_eval.csv,fr dataset-1/hausa/metadata_train.csv,dataset-1/hausa/metadata_eval.csv,ha dataset-1/igbo/metadata_train.csv,dataset-1/igbo/metadata_eval.csv,ig dataset-1/kinyarwanda/metadata_train.csv,dataset-1/kinyarwanda/metadata_eval.csv,rw dataset-1/luganda/metadata_train.csv,dataset-1/luganda/metadata_eval.csv,lg dataset-1/pedi/metadata_train.csv,,nso dataset-1/sesotho/metadata_train.csv,,st dataset-1/shona/metadata_train.csv,,sn dataset-1/swahili/metadata_train.csv,dataset-1/swahili/metadata_eval.csv,sw dataset-1/tswana/metadata_train.csv,,tn dataset-1/twi/metadata_train.csv,dataset-1/twi/metadata_eval.csv,tw dataset-1/xhosa/metadata_train.csv,,xh dataset-1/yoruba/metadata_train.csv,dataset-1/yoruba/metadata_eval.csv,yo dataset-1/zulu/metadata_train.csv,,zu \
---num_epochs 2 \
+--num_epochs 6 \
 --batch_size 4 \
 --grad_acumm 4 \
 --max_text_length 400 \

@@ -14,3 +14,4 @@ vivoice-datasets/
 output/
 dataset-1
 *.out
+*checkpoint

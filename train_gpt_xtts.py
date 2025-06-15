@@ -189,8 +189,8 @@ def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_au
     config.scheduler_after_epoch = False
     config.lr_scheduler = "CosineAnnealingWarmRestarts"
     config.lr_scheduler_params = {
-        "T_0": 88050,       # First restart
-        "T_mult": 1,        # Double the period after each restart
+        "T_0": 88050,       # First restart (2 epochs)
+        "T_mult": 1,
         "eta_min": 1e-7,    # Minimum LR
         "last_epoch": -1
     }
